@@ -111,11 +111,13 @@ function hideBlacklistedTweets(): void {
   chrome.storage.sync.get(['blacklist', 'whitelist'], function (data) {
     const blacklist = data.blacklist || {};
     const whitelist = data.whitelist || {};
-    const tweetElements = document.querySelectorAll(`article[data-testid="tweet"]`);
+    const tweetElements = document.querySelectorAll(`article[data-testid="tweet"]:not([aria-blocked="true"])`);
     tweetElements.forEach(element => {
       const userData = getUserData(element);
       if (userIds.includes(userData.user_id) && blacklist[userData.user_id] && !whitelist[userData.user_id]) {
-        (element as HTMLElement).style.display = 'none';
+        const parentDiv = element.closest('div[data-testid="cellInnerDiv"]');
+        (parentDiv as HTMLElement).style.display = 'none';
+        (element as HTMLElement).setAttribute('aria-blocked', 'true');
       }
     });
   });
