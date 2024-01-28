@@ -99,7 +99,7 @@ function addToBlacklist(repliesCount: Record<string, number>): void {
         blacklist[userId] = true;
       }
     });
-    chrome.storage.sync.set({ 'blacklist': blacklist });
+    writeToStorage('blacklist', blacklist);
   });
 }
 
@@ -156,3 +156,20 @@ document.addEventListener('scroll', processTweets);
 
 // Also run processTweets every 2 seconds
 setInterval(processTweets, 2000);
+
+let cache: Record<string, any> = {};
+let cacheTimer: ReturnType<typeof setTimeout> | null = null;
+
+function writeToStorage(key: string, value: any): void {
+  cache[key] = value;
+
+  if (!cacheTimer) {
+    cacheTimer = setTimeout(() => {
+      chrome.storage.sync.set(cache, () => {
+        cache = {};
+        clearTimeout(cacheTimer as ReturnType<typeof setTimeout>);
+        cacheTimer = null;
+      });
+    }, 500);
+  }
+}
