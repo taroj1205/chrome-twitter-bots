@@ -11,6 +11,29 @@ function getUserData(tweetElement: Element): Tweet {
   // Find the user name element within the tweet
   const userNameElement = tweetElement.querySelector('[data-testid="User-Name"]');
 
+  const parentDiv = tweetElement.closest('div[data-testid="cellInnerDiv"]');
+
+  // If the parent div doesn't exist, return an empty Tweet object
+  if (!parentDiv) {
+    return {
+      user_name: '',
+      user_id: '',
+    };
+  }
+
+  // Get the style of the parent div
+  const style = window.getComputedStyle(parentDiv.children[0]);
+
+  const borderColor = style.getPropertyValue('border-bottom-color');
+  const borderColors = ['rgb(47, 51, 54)', 'rgb(56, 68, 77)', 'rgb(239, 243, 244)'];
+  if (!borderColors.includes(borderColor)) {
+    // If the tweet doesn't have a border bottom color of one of the expected colors, return an empty Tweet object
+    return {
+      user_name: '',
+      user_id: '',
+    };
+  }
+
   // Extract the user name text, if it exists
   const userName = userNameElement ? userNameElement.textContent : null;
 

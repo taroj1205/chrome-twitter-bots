@@ -69,13 +69,17 @@ window.onload = function () {
     .then(data => {
       const serverVersion = data.tag_name;
 
-      const currentVersion = "v1.0.0";
+      const currentVersion = "v1.0.1";
 
-      // If the versions do not match, notify the user
-      if (currentVersion !== serverVersion) {
+      // Remove the 'v' from the version strings
+      const currentVersionNumber = parseFloat(currentVersion.replace('v', ''));
+      const serverVersionNumber = parseFloat(serverVersion.replace('v', ''));
+
+      // If the current version is smaller than the server version, notify the user
+      if (currentVersionNumber < serverVersionNumber) {
         const noticeElement = document.getElementById('notice') as HTMLDivElement;
         const message = `A new version of this extension is available. Please update to the latest version.`
-        const link = `https://github.com/taroj1205/chrome-twitter-bots/releases/tag/${serverVersion}`
+        const link = `https://github.com/taroj1205/chrome-twitter-bots/releases/tag/latest`
         const messageElement = document.createElement('p');
         messageElement.textContent = message;
         messageElement.className = 'text-lg text-red-600';
