@@ -44,8 +44,8 @@ function showBlacklist(): void {
     let blacklistTextArea = document.getElementById('blacklist') as HTMLTextAreaElement;
     let whitelistTextArea = document.getElementById('whitelist') as HTMLTextAreaElement;
     // Convert the values of the text areas to objects
-    let blacklist = blacklistTextArea.value.split('\n').reduce((obj, userId) => ({ ...obj, [userId]: true }), {});
-    let whitelist = whitelistTextArea.value.split('\n').reduce((obj, userId) => ({ ...obj, [userId]: true }), {});
+    let blacklist = blacklistTextArea.value.split('\n').filter(userId => userId.trim() !== '').reduce((obj, userId) => ({ ...obj, [userId]: true }), {});
+    let whitelist = whitelistTextArea.value.split('\n').filter(userId => userId.trim() !== '').reduce((obj, userId) => ({ ...obj, [userId]: true }), {});
     // Save the blacklist and whitelist to storage
     chrome.storage.sync.set({ 'blacklist': blacklist, 'whitelist': whitelist });
     
