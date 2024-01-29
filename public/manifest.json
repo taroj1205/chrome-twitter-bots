@@ -1,7 +1,8 @@
 {
 	"manifest_version": 3,
 	"name": "Hide Twitter Bots",
-	"version": "1.0",
+	"description": "A Chrome extension to hide Twitter bots.",
+	"version": "1.0.3",
 	"permissions": [
 		"tabs",
 		"storage"
