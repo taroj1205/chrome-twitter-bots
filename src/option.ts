@@ -2,6 +2,14 @@ import "./styles.css";
 
 // Function to display the blacklist and whitelist in their respective text areas
 function showBlacklist(): void {
+  // Find the export button
+  const exportButton = document.getElementById('export') as HTMLButtonElement;
+  const importButton = document.getElementById('import') as HTMLInputElement;
+
+  // Add a click event listener to the export button
+  exportButton.addEventListener('click', downloadDataAsJson);
+  importButton.addEventListener('change', importDataFromJson);
+
   // Get the blacklist and whitelist from storage
   chrome.storage.sync.get(['blacklist', 'whitelist'], function(data) {
     // Initialize the blacklist and whitelist with the stored data, or empty objects if no data was found
@@ -95,3 +103,81 @@ window.onload = function () {
     })
     .catch(error => console.error('Error:', error));
 };
+
+// Function to download data as JSON file
+function downloadDataAsJson(): void {
+  // Get the blacklist and whitelist from storage
+  chrome.storage.sync.get(['blacklist', 'whitelist'], function(data) {
+    // Initialize the blacklist and whitelist with the stored data, or empty objects if no data was found
+    let blacklist = data.blacklist || {};
+    let whitelist = data.whitelist || {};
+
+    // Prepare the data to be downloaded
+    let dataToDownload = {
+      blacklist: Object.keys(blacklist),
+      whitelist: Object.keys(whitelist)
+    };
+
+    // Convert the data to a JSON string
+    let dataStr = JSON.stringify(dataToDownload);
+
+    // Create a Blob object with the data
+    let dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+    // Create a URL for the Blob object
+    let url = URL.createObjectURL(dataBlob);
+
+    // Create a link element
+    let link = document.createElement('a');
+
+    // Set the href and download attributes of the link
+    link.href = url;
+    link.download = 'data.json';
+
+    // Append the link to the body
+    document.body.appendChild(link);
+
+    // Simulate a click on the link
+    link.click();
+
+    // Remove the link from the body
+    document.body.removeChild(link);
+  });
+}
+
+// Function to import data from JSON file
+function importDataFromJson(event: Event): void {
+  // Get the file from the event
+  const file = (event.target as HTMLInputElement).files?.[0];
+
+  // Create a new FileReader
+  const reader = new FileReader();
+
+  // Add a load event listener to the FileReader
+  reader.addEventListener('load', function() {
+    // Parse the data from the file
+    const data = JSON.parse(reader.result as string);
+
+    // Get the blacklist and whitelist from the data
+    const blacklistArray = data.blacklist || [];
+    const whitelistArray = data.whitelist || {};
+
+    // Convert the arrays back into objects
+    const blacklist: { [key: string]: boolean } = blacklistArray.reduce((obj: { [key: string]: boolean }, userId: string) => ({ ...obj, [userId]: true }), {});
+    const whitelist: { [key: string]: boolean } = whitelistArray.reduce((obj: { [key: string]: boolean }, userId: string) => ({ ...obj, [userId]: true }), {});
+
+    // Save the blacklist and whitelist to storage
+    chrome.storage.sync.set({ 'blacklist': blacklist, 'whitelist': whitelist });
+
+    // Update the text areas with the new data
+    let blacklistTextArea = document.getElementById('blacklist') as HTMLTextAreaElement;
+    let whitelistTextArea = document.getElementById('whitelist') as HTMLTextAreaElement;
+    blacklistTextArea.value = Object.keys(blacklist).join('\n');
+    whitelistTextArea.value = Object.keys(whitelist).join('\n');
+  });
+
+  // Read the file as text
+  if (file) {
+    reader.readAsText(file);
+  }
+}
