@@ -150,30 +150,41 @@ function importDataFromJson(event: Event): void {
   // Get the file from the event
   const file = (event.target as HTMLInputElement).files?.[0];
 
+  // Check if the file is a JSON file
+  if (file && file.type !== 'application/json') {
+    alert('Please select a JSON file.');
+    return;
+  }
+
   // Create a new FileReader
   const reader = new FileReader();
 
   // Add a load event listener to the FileReader
   reader.addEventListener('load', function() {
-    // Parse the data from the file
-    const data = JSON.parse(reader.result as string);
+    try {
+      // Parse the data from the file
+      const data = JSON.parse(reader.result as string);
 
-    // Get the blacklist and whitelist from the data
-    const blacklistArray = data.blacklist || [];
-    const whitelistArray = data.whitelist || {};
+      // Get the blacklist and whitelist from the data
+      const blacklistArray = data.blacklist || [];
+      const whitelistArray = data.whitelist || {};
 
-    // Convert the arrays back into objects
-    const blacklist: { [key: string]: boolean } = blacklistArray.reduce((obj: { [key: string]: boolean }, userId: string) => ({ ...obj, [userId]: true }), {});
-    const whitelist: { [key: string]: boolean } = whitelistArray.reduce((obj: { [key: string]: boolean }, userId: string) => ({ ...obj, [userId]: true }), {});
+      // Convert the arrays back into objects
+      const blacklist: { [key: string]: boolean } = blacklistArray.reduce((obj: { [key: string]: boolean }, userId: string) => ({ ...obj, [userId]: true }), {});
+      const whitelist: { [key: string]: boolean } = whitelistArray.reduce((obj: { [key: string]: boolean }, userId: string) => ({ ...obj, [userId]: true }), {});
 
-    // Save the blacklist and whitelist to storage
-    chrome.storage.sync.set({ 'blacklist': blacklist, 'whitelist': whitelist });
+      // Save the blacklist and whitelist to storage
+      chrome.storage.sync.set({ 'blacklist': blacklist, 'whitelist': whitelist });
 
-    // Update the text areas with the new data
-    let blacklistTextArea = document.getElementById('blacklist') as HTMLTextAreaElement;
-    let whitelistTextArea = document.getElementById('whitelist') as HTMLTextAreaElement;
-    blacklistTextArea.value = Object.keys(blacklist).join('\n');
-    whitelistTextArea.value = Object.keys(whitelist).join('\n');
+      // Update the text areas with the new data
+      let blacklistTextArea = document.getElementById('blacklist') as HTMLTextAreaElement;
+      let whitelistTextArea = document.getElementById('whitelist') as HTMLTextAreaElement;
+      blacklistTextArea.value = Object.keys(blacklist).join('\n');
+      whitelistTextArea.value = Object.keys(whitelist).join('\n');
+    } catch (error) {
+      // Alert the user if the JSON format isn't as expected
+      alert('The JSON format isn\'t as expected. Please check the file and try again.');
+    }
   });
 
   // Read the file as text
