@@ -1,7 +1,26 @@
 import "./styles.css";
 
+function settings() {
+  // Find the checkbox
+  const emojiOrQuotesCheckbox = document.getElementById('emojiOrQuotes') as HTMLInputElement;
+
+  // Get the current state of the checkbox from storage
+  chrome.storage.sync.get(['emojiOrQuotesBlacklist'], function (data) {
+    // Set the checkbox to the stored state, or false if no state was found
+    emojiOrQuotesCheckbox.checked = data.emojiOrQuotesBlacklist || false;
+  });
+
+  // Add a change event listener to the checkbox
+  emojiOrQuotesCheckbox.addEventListener('change', function () {
+    // Save the new state of the checkbox to storage
+    chrome.storage.sync.set({ 'emojiOrQuotesBlacklist': emojiOrQuotesCheckbox.checked });
+  });
+}
+
 // Function to display the blacklist and whitelist in their respective text areas
 function showBlacklist(): void {
+  settings();
+
   // Find the export button
   const exportButton = document.getElementById('export') as HTMLButtonElement;
   const importButton = document.getElementById('import') as HTMLInputElement;
@@ -77,7 +96,7 @@ window.onload = function () {
     .then(data => {
       const serverVersion = data.tag_name;
 
-      const currentVersion = "v1.0.3";
+      const currentVersion = "v1.0.4";
 
       // Remove the 'v' from the version strings
       const currentVersionNumber = parseFloat(currentVersion.replace('v', ''));
