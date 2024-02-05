@@ -3,10 +3,12 @@ export type Tweet = {
   user_name: string;
   user_id: string;
   content: string | null;
+  hasContent: boolean;
   isConversation: boolean;
-  tweetOwner: boolean;
+  isTweetOwner: boolean;
   verified: boolean;
   language: string;
+  quoteOnly: boolean;
 };
 
 console.log('Twitter Hide Blocked Users Extension is active.');
@@ -15,23 +17,24 @@ console.log('Twitter Hide Blocked Users Extension is active.');
 function getUserData(tweetElement: Element): Tweet | null {
   try {
     // Find the user name element within the tweet
-    const userNameElement = tweetElement.querySelector('[data-testid="User-Name"]') as HTMLDivElement;
+    const userNameElement = tweetElement.querySelectorAll('[data-testid="User-Name"]');
     const content = tweetElement.querySelector('[data-testid="tweetText"]') as HTMLDivElement;
+    const hasContent = Boolean(content);
+
     let lang = null;
 
     if (content && content.getAttribute('lang')) {
       lang = content.getAttribute('lang');
-      console.log(lang)
     }
 
-    const verified = Boolean(userNameElement.querySelector('[data-testid="icon-verified"]'));
+    const verified = Boolean(userNameElement[0].querySelector('[data-testid="icon-verified"]'));
 
     const parentDiv = tweetElement.closest('div[data-testid="cellInnerDiv"]') as HTMLDivElement;
     const style = window.getComputedStyle(parentDiv.children[0]);
     const borderColor = style.getPropertyValue('border-bottom-color');
 
     // Extract the user name text, if it exists
-    const userName = userNameElement?.textContent || '';
+    const userName = userNameElement[0]?.textContent || '';
 
     // Split the user name into name and id parts
     const [name, id] = userName.split(/(@[^·]+)/).map(part => part.trim().replace('@', ''));
@@ -39,20 +42,23 @@ function getUserData(tweetElement: Element): Tweet | null {
     // Check if the user id matches the id in the current URL
     const urlFormat = /^https:\/\/twitter\.com\/(\w+)\/status\/\d+$/;
     const match = window.location.href.match(urlFormat);
-    const tweetOwner = match ? match[1] !== id : false;
+    const isTweetOwner = match && match[1] === id || false;
+
+    const isConversation = borderColor ? !['rgb(47, 51, 54)', 'rgb(56, 68, 77)', 'rgb(239, 243, 244)'].includes(borderColor) : false
 
     // Return the extracted user data
     return {
       user_name: name,
       user_id: id,
       content: content?.textContent || '',
-      isConversation: borderColor ? !['rgb(47, 51, 54)', 'rgb(56, 68, 77)', 'rgb(239, 243, 244)'].includes(borderColor) : false,
-      tweetOwner: tweetOwner,
+      isConversation: isConversation,
+      isTweetOwner: isTweetOwner,
       verified: verified,
+      hasContent: hasContent,
       language: lang || '',
+      quoteOnly: !hasContent && userNameElement.length > 1
     };
   } catch (error) {
-    console.error('An error occurred while extracting user data:', error);
     return null;
   }
 }
@@ -69,9 +75,11 @@ function getRepliesCount(tweets: Tweet[]): Record<string, number> {
     if (!repliesCount[tweet.user_id]) {
       repliesCount[tweet.user_id] = 0;
     }
-    repliesCount[tweet.user_id]++;
+    if (!tweet.isTweetOwner && !tweet.isConversation) {
+      if (emojiOrQuotesBlacklist && !tweet.hasContent) return
+      repliesCount[tweet.user_id]++
+    };
   });
-  console.log(repliesCount)
   return repliesCount;
 }
 
@@ -83,7 +91,7 @@ function addToBlacklist(repliesCount: Record<string, number>, badTweets: Tweet[]
         let blacklist = data.blacklist || {};
         let whitelist = data.whitelist || {};
         Object.entries(repliesCount).forEach(([userId, count]) => {
-          if (count > 3 && !whitelist[userId]) {
+          if (count > 2 && !whitelist[userId]) {
             blacklist[userId] = true;
           }
         });
@@ -122,10 +130,16 @@ function hideBlacklistedTweets(tweets: Tweet[], badTweets: Tweet[]): void {
 
 // Flag to indicate if the extension is enabled
 let extensionEnabled = true;
+let emojiOrQuotesBlacklist = false;
 
 // Get the initial state of the extension from storage
 chrome.storage.sync.get('extensionEnabled', function (data) {
   extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
+});
+
+// Get the initial state of the emojiOrQuotesBlacklist from storage
+chrome.storage.sync.get('emojiOrQuotesBlacklist', function (data) {
+  emojiOrQuotesBlacklist = data.emojiOrQuotesBlacklist !== undefined ? data.emojiOrQuotesBlacklist : false;
 });
 
 // Listen for changes to the extension's state in storage
@@ -133,12 +147,15 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
   if (changes.extensionEnabled) {
     extensionEnabled = changes.extensionEnabled.newValue;
   }
+  if (changes.emojiOrQuotesBlacklist) {
+    emojiOrQuotesBlacklist = changes.emojiOrQuotesBlacklist.newValue;
+  }
 });
 
 // Function to extract tweets
 function extractTweets(): Tweet[] {
   // Find all tweet elements on the page
-  const tweetElements = document.querySelectorAll('article[data-testid="tweet"]');
+  const tweetElements = document.querySelectorAll('article[data-testid="tweet"]:not([aria-blocked="true"]');
 
   // Map each tweet element to its user data
   const tweets = Array.from(tweetElements).map(getUserData);
@@ -149,8 +166,12 @@ function extractTweets(): Tweet[] {
 
 // Function to categorize tweets
 function categorizeTweets(tweets: Tweet[], originalLang: string | null): TweetsResult {
-  // Filter out bad tweets
-  const badTweets = tweets.filter(tweet => isBadTweet(tweet, originalLang));
+  let badTweets: Tweet[] = [];
+
+  // Filter out bad tweets only if emojiOrQuotesBlacklist is true
+  if (emojiOrQuotesBlacklist) {
+    badTweets = tweets.filter(tweet => isBadTweet(tweet));
+  }
 
   // Remove bad tweets from the tweets array
   const goodTweets = tweets.filter(tweet => !badTweets.includes(tweet));
@@ -159,9 +180,10 @@ function categorizeTweets(tweets: Tweet[], originalLang: string | null): TweetsR
 }
 
 // Function to determine if a tweet is bad
-function isBadTweet(tweet: Tweet, originalLang: string | null): boolean {
+function isBadTweet(tweet: Tweet): boolean {
   // Check if the user is verified and the content is only emoji or if the language is different
-  return tweet.verified && (tweet.content === null || tweet.content.length === 0 || tweet.language !== originalLang) && !tweet.isConversation;
+  // and if the HTML content does not contain an <a> tag
+  return tweet.verified && !tweet.isTweetOwner && (tweet.content === null || tweet.content.length === 0 || tweet.quoteOnly) && !tweet.isConversation && tweet.hasContent;
 }
 
 // Function to process tweets, either on scroll or every 2 seconds
