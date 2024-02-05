@@ -77,7 +77,7 @@ window.onload = function () {
     .then(data => {
       const serverVersion = data.tag_name;
 
-      const currentVersion = "v1.0.3";
+      const currentVersion = "v1.0.4";
 
       // Remove the 'v' from the version strings
       const currentVersionNumber = parseFloat(currentVersion.replace('v', ''));

@@ -12,30 +12,34 @@
 			<label for="blacklist" class="mb-2 font-bold text-lg text-gray-900"
 				>Blacklist</label
 			>
-			<div
-				id="container1"
-				class="flex border border-[rgb(203 213 225)] rounded-md">
+			<div class="max-h-[300px] overflow-y-auto">
 				<div
-					id="line-numbers1"
-					class="p-2 border-r border-[rgb(203 213 225)]"></div>
-				<textarea
-					id="blacklist"
-					class="p-2 border-none resize-none w-full rounded-r-md"
-					rows="5"></textarea>
+					id="container1"
+					class="flex border border-[rgb(203 213 225)] rounded-md">
+					<div
+						id="line-numbers1"
+						class="p-2 border-r border-[rgb(203 213 225)]"></div>
+					<textarea
+						id="blacklist"
+						class="p-2 border-none resize-none w-full rounded-r-md"
+						rows="5"></textarea>
+				</div>
 			</div>
 			<label for="whitelist" class="mb-2 font-bold text-lg text-gray-900"
 				>Whitelist</label
 			>
-			<div
-				id="container2"
-				class="flex border border-[rgb(203 213 225)] rounded-md">
+			<div class="max-h-[300px] overflow-y-auto">
 				<div
-					id="line-numbers2"
-					class="p-2 border-r border-[rgb(203 213 225)]"></div>
-				<textarea
-					id="whitelist"
-					class="p-2 border-none resize-none w-full rounded-r-md"
-					rows="5"></textarea>
+					id="container2"
+					class="flex border border-[rgb(203 213 225)] rounded-md">
+					<div
+						id="line-numbers2"
+						class="p-2 border-r border-[rgb(203 213 225)]"></div>
+					<textarea
+						id="whitelist"
+						class="p-2 border-none resize-none w-full rounded-r-md"
+						rows="5"></textarea>
+				</div>
 			</div>
 			<div class="space-x-4">
 				<button
@@ -49,7 +53,9 @@
 					Export
 				</button>
 				<input id="import" type="file" class="hidden" accept=".json" />
-				<label for="import" class="py-2 px-4 mt-4 bg-blue-500 hover:bg-blue-700 text-white text-md font-bold rounded-md transition duration-200 ease-in-out cursor-pointer">
+				<label
+					for="import"
+					class="py-2 px-4 mt-4 bg-blue-500 hover:bg-blue-700 text-white text-md font-bold rounded-md transition duration-200 ease-in-out cursor-pointer">
 					Import
 				</label>
 			</div>
