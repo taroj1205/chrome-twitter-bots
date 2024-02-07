@@ -33,11 +33,9 @@ function getUserData(tweetElement: Element): Tweet | null {
     const style = window.getComputedStyle(parentDiv.children[0]);
     const borderColor = style.getPropertyValue('border-bottom-color');
 
-    // Extract the user name text, if it exists
-    const userName = userNameElement[0]?.textContent || '';
-
-    // Split the user name into name and id parts
-    const [name, id] = userName.split(/(@[^@]*)$/).map(part => part.trim().replace('@', ''));
+    const userName = userNameElement[0].querySelectorAll('a');
+    const name = String(userName[0].textContent);
+    const id = userName[1]?.textContent?.replace('@', '') || '';
 
     // Check if the user id matches the id in the current URL
     const urlFormat = /^https:\/\/twitter\.com\/(\w+)\/status\/\d+$/;
