@@ -37,7 +37,7 @@ function getUserData(tweetElement: Element): Tweet | null {
     const userName = userNameElement[0]?.textContent || '';
 
     // Split the user name into name and id parts
-    const [name, id] = userName.split(/(@[^·]+)/).map(part => part.trim().replace('@', ''));
+    const [name, id] = userName.split(/(@[^@]*)$/).map(part => part.trim().replace('@', ''));
 
     // Check if the user id matches the id in the current URL
     const urlFormat = /^https:\/\/twitter\.com\/(\w+)\/status\/\d+$/;
